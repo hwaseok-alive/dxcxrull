@@ -238,13 +238,13 @@ function rollGuardian() {
 
   addDivider();
   const roll = rollDice(30);
-  log(`🧭 탐사원 1D30 → ${roll}`);
+  log(`탐사원 1D30 → ${roll}`);
 
   for (let i = 0; i < angelHP.length; i++) {
     const idx = (angelIndex + i) % angelHP.length;
     if (angelHP[idx] > 0) {
       angelHP[idx] = Math.max(0, angelHP[idx] - roll);
-      log(`👁️ 괴이 ${idx+1} 남은 체력 → ${angelHP[idx]}`);
+      log(`괴이 ${idx+1} 남은 체력 → ${angelHP[idx]}`);
       angelIndex = idx;
       break;
     }
@@ -258,13 +258,13 @@ function rollAngel() {
 
   addDivider();
   const roll = rollDice(60);
-  log(`👁️ 괴이 1D60 → ${roll}`);
+  log(`괴이 1D60 → ${roll}`);
 
   for (let i = 0; i < guardianHP.length; i++) {
     const idx = (guardianIndex + i) % guardianHP.length;
     if (guardianHP[idx] > 0) {
       guardianHP[idx] = Math.max(0, guardianHP[idx] - roll);
-      log(`🧭 탐사원 남은 체력 → ${guardianHP[idx]}`);
+      log(`탐사원 남은 체력 → ${guardianHP[idx]}`);
       guardianIndex = idx + 1;
       break;
     }
@@ -286,3 +286,4 @@ function resetAll() {
 
 </body>
 </html>
+
