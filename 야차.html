@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧭 탐사원 & 👁️ 괴이 전투 시뮬레이터</title>
+<style>
+  body {
+    background-color: #111;
+    color: #eee;
+    font-family: "Pretendard", sans-serif;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+  }
+
+  h1 { margin: 10px 0; }
+
+  .main-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .side-panel {
+    width: 200px;
+    background-color: #1a1a1a;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 10px #333;
+    text-align: left;
+  }
+
+  .container {
+    flex-grow: 1;
+    max-width: 700px;
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .card {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 15px;
+    width: 300px;
+    box-shadow: 0 0 10px #333;
+    flex-shrink: 0;
+  }
+
+  button {
+    margin-top: 10px;
+    padding: 8px 18px;
+    border: none;
+    border-radius: 5px;
+    background-color: #555;
+    color: #fff;
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  button:hover { background-color: #777; }
+
+  .result-box {
+    margin-top: 10px;
+    background-color: #111;
+    padding: 10px;
+    border-radius: 5px;
+    min-height: 30px;
+  }
+
+  .log-container {
+    width: 100%;
+    max-width: 700px;
+    margin: 20px auto 0;
+    text-align: center;
+  }
+
+  .log {
+    background-color: #1a1a1a;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: left;
+    width: 100%;
+    box-shadow: 0 0 10px #333;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .log-entry {
+    margin: 5px 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .divider {
+    text-align: center;
+    color: #888;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .divider button {
+    margin-left: 10px;
+    background-color: #444;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>🧭 탐사원 & 👁️ 괴이 전투 시뮬레이터</h1>
+
+<div class="main-container">
+  <div class="side-panel">
+    <h3>🧭 탐사원 체력</h3>
+    <div id="guardianStatus"></div>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h2>🧭 탐사원</h2>
+      <label>참여 인원:
+        <select id="guardianCount"></select>
+      </label><br>
+      <label><input type="checkbox" id="g30"> 1D30</label><br>
+      <button onclick="rollGuardian()">굴리기</button>
+      <div class="result-box" id="guardianResult">결과: -</div>
+    </div>
+
+    <div class="card">
+      <h2>👁️ 괴이</h2>
+      <label>괴이 수:
+        <select id="angelCount"></select>
+      </label><br>
+      <label><input type="checkbox" id="a60"> 1D60</label><br>
+      <button onclick="rollAngel()">굴리기</button>
+      <div class="result-box" id="angelResult">결과: -</div>
+    </div>
+
+    <div class="log-container">
+      <button onclick="resetAll()">🔁 다시 시작</button>
+      <h2>📜 전투 로그</h2>
+      <div class="log" id="battleLog"></div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <h3>👁️ 괴이 체력</h3>
+    <div id="angelStatus"></div>
+  </div>
+</div>
+
+<script>
+const guardianSelect = document.getElementById('guardianCount');
+const angelSelect = document.getElementById('angelCount');
+const logBox = document.getElementById('battleLog');
+const guardianStatus = document.getElementById('guardianStatus');
+const angelStatus = document.getElementById('angelStatus');
+
+let guardianHP = [];
+let angelHP = [];
+let guardianIndex = 0;
+let angelIndex = 0;
+let turn = 1;
+
+for (let i = 1; i <= 40; i++) {
+  guardianSelect.innerHTML += `<option value="${i}">${i}명</option>`;
+}
+for (let i = 1; i <= 5; i++) {
+  angelSelect.innerHTML += `<option value="${i}">${i}명</option>`;
+}
+
+function rollDice(sides) {
+  return Math.floor(Math.random() * sides) + 1;
+}
+
+function log(text) {
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.textContent = text;
+  logBox.appendChild(entry);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function addDivider() {
+  const div = document.createElement('div');
+  div.className = 'divider';
+
+  const turnText = document.createElement('span');
+  turnText.textContent = `────────── [턴 ${turn}] ──────────`;
+  div.appendChild(turnText);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = '📋 복사';
+  copyBtn.onclick = () => {
+    let textToCopy = '';
+    let sibling = div.nextSibling;
+    while (sibling && !sibling.classList.contains('divider')) {
+      if (sibling.classList.contains('log-entry')) {
+        textToCopy += sibling.innerText + '\n';
+      }
+      sibling = sibling.nextSibling;
+    }
+    navigator.clipboard.writeText(textToCopy);
+  };
+  div.appendChild(copyBtn);
+
+  logBox.appendChild(div);
+  turn++;
+}
+
+function initializeHP() {
+  guardianHP = Array(parseInt(guardianSelect.value)).fill(100);
+  angelHP = Array(parseInt(angelSelect.value)).fill(200);
+  updateStatus();
+}
+
+function updateStatus() {
+  guardianStatus.innerHTML = guardianHP.map((hp,i)=>`<div>탐사원 ${i+1} → ${hp}</div>`).join('');
+  angelStatus.innerHTML = angelHP.map((hp,i)=>`<div>괴이 ${i+1} → ${hp}</div>`).join('');
+}
+
+function rollGuardian() {
+  if (guardianHP.length === 0) initializeHP();
+  if (!g30.checked) return;
+
+  addDivider();
+  const roll = rollDice(30);
+  log(`🧭 탐사원 1D30 → ${roll}`);
+
+  for (let i = 0; i < angelHP.length; i++) {
+    const idx = (angelIndex + i) % angelHP.length;
+    if (angelHP[idx] > 0) {
+      angelHP[idx] = Math.max(0, angelHP[idx] - roll);
+      log(`👁️ 괴이 ${idx+1} 남은 체력 → ${angelHP[idx]}`);
+      angelIndex = idx;
+      break;
+    }
+  }
+  updateStatus();
+}
+
+function rollAngel() {
+  if (guardianHP.length === 0) initializeHP();
+  if (!a60.checked) return;
+
+  addDivider();
+  const roll = rollDice(60);
+  log(`👁️ 괴이 1D60 → ${roll}`);
+
+  for (let i = 0; i < guardianHP.length; i++) {
+    const idx = (guardianIndex + i) % guardianHP.length;
+    if (guardianHP[idx] > 0) {
+      guardianHP[idx] = Math.max(0, guardianHP[idx] - roll);
+      log(`🧭 탐사원 남은 체력 → ${guardianHP[idx]}`);
+      guardianIndex = idx + 1;
+      break;
+    }
+  }
+  updateStatus();
+}
+
+function resetAll() {
+  guardianHP = [];
+  angelHP = [];
+  guardianIndex = 0;
+  angelIndex = 0;
+  turn = 1;
+  guardianStatus.innerHTML = '';
+  angelStatus.innerHTML = '';
+  logBox.innerHTML = '';
+}
+</script>
+
+</body>
+</html>
